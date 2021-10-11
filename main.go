@@ -1,28 +1,19 @@
 package main
 
 import (
-	"net/http"
+	"log"
 
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/arata-nvm/monban/database"
+	"github.com/arata-nvm/monban/env"
+	"github.com/arata-nvm/monban/web"
 )
 
 func main() {
-	e := newRouter()
-	e.Logger.Fatal(e.Start(":8080"))
-}
+	err := database.Initialize()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-func newRouter() *echo.Echo {
-	e := echo.New()
-
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-
-	e.POST("/", postEnter)
-
-	return e
-}
-
-func postEnter(ctx echo.Context) error {
-	return ctx.NoContent(http.StatusNoContent)
+	e := web.NewRouter()
+	e.Logger.Fatal(e.Start(":" + env.Port()))
 }
