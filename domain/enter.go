@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/arata-nvm/monban/database"
@@ -10,13 +12,45 @@ import (
 func Enter(studentID int) error {
 	sheetId := env.EntryLogSid()
 	writeRange := "A2"
-	values := []interface{}{timestamp(), studentID}
-	err := database.AppendValues(sheetId, writeRange, values)
+
+	studentName, err := FindStudentName(studentID)
+	if err != nil {
+		return err
+	}
+
+	values := []interface{}{timestamp(), studentName}
+	err = database.AppendValues(sheetId, writeRange, values)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func FindStudentName(studentID int) (string, error) {
+	sheetId := env.StudentsSid()
+	readRange := "C2:D200" // TODO
+	values, err := database.GetValues(sheetId, readRange)
+	if err != nil {
+		return "", err
+	}
+
+	name := fmt.Sprintf("未登録(%d)", studentID)
+
+	for i := range values {
+		row := values[len(values)-i-1]
+		id, err := strconv.Atoi(row[1].(string))
+		if err != nil {
+			return "", err
+		}
+
+		if id == studentID {
+			name = row[0].(string)
+			break
+		}
+	}
+
+	return name, nil
 }
 
 func timestamp() string {

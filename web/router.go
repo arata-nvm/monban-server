@@ -32,6 +32,7 @@ func postEnter(ctx echo.Context) error {
 	}
 
 	if err := domain.Enter(req.StudentID); err != nil {
+		ctx.Logger().Warn(err)
 		return ctx.NoContent(http.StatusInternalServerError)
 	}
 

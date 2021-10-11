@@ -38,6 +38,15 @@ func Initialize() error {
 	return nil
 }
 
+func GetValues(sheetId string, readRange string) ([][]interface{}, error) {
+	resp, err := service.Spreadsheets.Values.Get(sheetId, readRange).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Values, nil
+}
+
 func AppendValues(sheetId string, writeRange string, values []interface{}) error {
 	valueInputOption := "USER_ENTERED"
 	insertDataOption := "INSERT_ROWS"
@@ -45,12 +54,10 @@ func AppendValues(sheetId string, writeRange string, values []interface{}) error
 		Values: [][]interface{}{values},
 	}
 
-	ctx := context.Background()
 	_, err := service.Spreadsheets.Values.Append(
 		sheetId, writeRange, rb,
 	).ValueInputOption(valueInputOption).
 		InsertDataOption(insertDataOption).
-		Context(ctx).
 		Do()
 	if err != nil {
 		return err
