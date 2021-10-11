@@ -29,7 +29,7 @@ func Enter(studentID int) error {
 
 func FindStudentName(studentID int) (string, error) {
 	sheetId := env.StudentsSid()
-	readRange := "C2:D200" // TODO
+	readRange := "C2:D"
 	values, err := database.GetValues(sheetId, readRange)
 	if err != nil {
 		return "", err
