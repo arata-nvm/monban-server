@@ -1,7 +1,10 @@
 package domain
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -10,15 +13,17 @@ import (
 )
 
 func Enter(studentID int) error {
-	sheetId := env.EntryLogSid()
-	writeRange := "A2"
-
+	now := timestamp()
 	studentName, err := FindStudentName(studentID)
 	if err != nil {
 		return err
 	}
 
-	values := []interface{}{timestamp(), studentName}
+	SendNotify(now, studentName)
+
+	sheetId := env.EntryLogSid()
+	writeRange := "A2"
+	values := []interface{}{now, studentName}
 	err = database.AppendValues(sheetId, writeRange, values)
 	if err != nil {
 		return err
@@ -51,6 +56,22 @@ func FindStudentName(studentID int) (string, error) {
 	}
 
 	return name, nil
+}
+
+func SendNotify(now string, studentName string) error {
+	webhookUrl := env.SlackWebhook()
+
+	content := map[string]string{
+		"text": fmt.Sprintf("%s\n%s さんがログインしました。", now, studentName),
+	}
+	payload, err := json.Marshal(content)
+	if err != nil {
+		return err
+	}
+
+	http.Post(webhookUrl, "application/json", bytes.NewBuffer(payload))
+
+	return nil
 }
 
 func timestamp() string {

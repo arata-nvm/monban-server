@@ -26,3 +26,7 @@ func EntryLogSid() string {
 func StudentsSid() string {
 	return os.Getenv("STUDENTS_SID")
 }
+
+func SlackWebhook() string {
+	return os.Getenv("SLACK_WEBHOOK")
+}
