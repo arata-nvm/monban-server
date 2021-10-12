@@ -23,13 +23,13 @@ func Entry(studentID int) error {
 		return err
 	}
 
-	studentIds, err := FindTodaysStudents()
+	activeStudents, err := FindActiveStudents()
 	if err != nil {
 		return err
 	}
 
 	now := timestamp()
-	event := DetermineEventType(studentIds, studentID)
+	event := DetermineEventType(activeStudents, studentID)
 	err = PostMessage(now, studentName, event)
 	if err != nil {
 		return err
@@ -39,9 +39,9 @@ func Entry(studentID int) error {
 }
 
 func FindStudentName(studentID int) (string, error) {
-	sheetId := env.StudentsSid()
+	sheetID := env.StudentsSID()
 	readRange := "C2:D"
-	values, err := database.GetValues(sheetId, readRange)
+	values, err := database.GetValues(sheetID, readRange)
 	if err != nil {
 		return "", err
 	}
@@ -64,10 +64,10 @@ func FindStudentName(studentID int) (string, error) {
 	return name, nil
 }
 
-func FindTodaysStudents() ([]int, error) {
-	sheetId := env.EntryLogSid()
+func FindActiveStudents() ([]int, error) {
+	sheetID := env.EntryLogSID()
 	readRange := "A2:B"
-	values, err := database.GetValues(sheetId, readRange)
+	values, err := database.GetValues(sheetID, readRange)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func FindTodaysStudents() ([]int, error) {
 	jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 	now := time.Now().In(jst)
 
-	var studentIds []int
+	var studentIDs []int
 	for i := range values {
 		row := values[len(values)-i-1]
 
@@ -88,22 +88,22 @@ func FindTodaysStudents() ([]int, error) {
 			break
 		}
 
-		studentId, err := strconv.Atoi(row[1].(string))
+		studentID, err := strconv.Atoi(row[1].(string))
 		if err != nil {
 			return nil, err
 		}
-		studentIds = append(studentIds, studentId)
+		studentIDs = append(studentIDs, studentID)
 	}
 
-	return studentIds, nil
+	return studentIDs, nil
 }
 
-func DetermineEventType(studentIds []int, studentID int) EventType {
-	if len(studentIds) == 0 {
+func DetermineEventType(activeStudents []int, studentID int) EventType {
+	if len(activeStudents) == 0 {
 		return EVENT_FIRST_ENTRY
 	}
 
-	numOfRecords := count(studentIds, studentID)
+	numOfRecords := count(activeStudents, studentID)
 	if numOfRecords%2 == 0 {
 		return EVENT_ENTRY
 	} else {
@@ -127,7 +127,7 @@ func PostMessage(now string, studentName string, event EventType) error {
 }
 
 func AppendLog(now string, studentID int, studentName string, typ EventType) error {
-	sheetId := env.EntryLogSid()
+	sheetID := env.EntryLogSID()
 	writeRange := "A2"
 
 	var typStr string
@@ -139,7 +139,7 @@ func AppendLog(now string, studentID int, studentName string, typ EventType) err
 	}
 
 	values := []interface{}{now, studentID, studentName, typStr}
-	err := database.AppendValues(sheetId, writeRange, values)
+	err := database.AppendValues(sheetID, writeRange, values)
 	if err != nil {
 		return err
 	}

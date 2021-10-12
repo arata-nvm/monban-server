@@ -19,11 +19,11 @@ func GoogleApiCred() string {
 	return os.Getenv("GOOGLE_API_CRED")
 }
 
-func EntryLogSid() string {
+func EntryLogSID() string {
 	return os.Getenv("ENTRY_LOG_SID")
 }
 
-func StudentsSid() string {
+func StudentsSID() string {
 	return os.Getenv("STUDENTS_SID")
 }
 
