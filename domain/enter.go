@@ -9,24 +9,33 @@ import (
 	"github.com/arata-nvm/monban/env"
 )
 
-func Enter(studentID int) error {
-	now := timestamp()
+type EventType int
+
+const (
+	EVENT_ENTRY EventType = iota
+	EVENT_FIRST_ENTRY
+	EVENT_EXIT
+)
+
+func Entry(studentID int) error {
 	studentName, err := FindStudentName(studentID)
 	if err != nil {
 		return err
 	}
 
-	SendNotify(now, studentID, studentName)
-
-	sheetId := env.EntryLogSid()
-	writeRange := "A2"
-	values := []interface{}{now, studentID, studentName}
-	err = database.AppendValues(sheetId, writeRange, values)
+	studentIds, err := FindTodaysStudents()
 	if err != nil {
 		return err
 	}
 
-	return nil
+	now := timestamp()
+	event := DetermineEventType(studentIds, studentID)
+	err = PostMessage(now, studentName, event)
+	if err != nil {
+		return err
+	}
+
+	return AppendLog(now, studentID, studentName, event)
 }
 
 func FindStudentName(studentID int) (string, error) {
@@ -53,32 +62,6 @@ func FindStudentName(studentID int) (string, error) {
 	}
 
 	return name, nil
-}
-
-func SendNotify(now string, studentId int, studentName string) error {
-	studentIds, err := FindTodaysStudents()
-	if err != nil {
-		return err
-	}
-
-	if len(studentIds) == 0 {
-		PostToSlack("🔓")
-	}
-
-	numOfRecords := 0
-	for _, id := range studentIds {
-		if id == studentId {
-			numOfRecords += 1
-		}
-	}
-
-	if numOfRecords%2 == 0 {
-		PostToSlack(fmt.Sprintf("%s\n%s さんがログインしました。", now, studentName))
-	} else {
-		PostToSlack(fmt.Sprintf("%s\n%s さんがログアウトしました。", now, studentName))
-	}
-
-	return nil
 }
 
 func FindTodaysStudents() ([]int, error) {
@@ -115,10 +98,69 @@ func FindTodaysStudents() ([]int, error) {
 	return studentIds, nil
 }
 
+func DetermineEventType(studentIds []int, studentID int) EventType {
+	if len(studentIds) == 0 {
+		return EVENT_FIRST_ENTRY
+	}
+
+	numOfRecords := count(studentIds, studentID)
+	if numOfRecords%2 == 0 {
+		return EVENT_ENTRY
+	} else {
+		return EVENT_EXIT
+	}
+}
+
+func PostMessage(now string, studentName string, event EventType) error {
+	switch event {
+	case EVENT_FIRST_ENTRY:
+		if err := PostToSlack("🔓"); err != nil {
+			return err
+		}
+		fallthrough
+	case EVENT_ENTRY:
+		return PostToSlack(fmt.Sprintf("%s\n%s さんがログインしました。", now, studentName))
+	case EVENT_EXIT:
+		return PostToSlack(fmt.Sprintf("%s\n%s さんがログアウトしました。", now, studentName))
+	}
+	return nil
+}
+
+func AppendLog(now string, studentID int, studentName string, typ EventType) error {
+	sheetId := env.EntryLogSid()
+	writeRange := "A2"
+
+	var typStr string
+	switch typ {
+	case EVENT_ENTRY, EVENT_FIRST_ENTRY:
+		typStr = "入室"
+	case EVENT_EXIT:
+		typStr = "退室"
+	}
+
+	values := []interface{}{now, studentID, studentName, typStr}
+	err := database.AppendValues(sheetId, writeRange, values)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 const TIMESTAMP_FORMAT string = "2006/01/02 15:04:05"
 
 func timestamp() string {
 	jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 	now := time.Now().In(jst)
 	return now.Format(TIMESTAMP_FORMAT)
+}
+
+func count(arr []int, value int) int {
+	cnt := 0
+	for _, v := range arr {
+		if v == value {
+			cnt += 1
+		}
+	}
+	return cnt
 }
