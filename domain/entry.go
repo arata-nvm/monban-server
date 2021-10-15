@@ -18,6 +18,14 @@ const (
 )
 
 func Entry(studentID int) error {
+	isDuplicate, err := IsDuplicate(studentID)
+	if err != nil {
+		return err
+	}
+	if isDuplicate {
+		return nil
+	}
+
 	studentName, err := FindStudentName(studentID)
 	if err != nil {
 		return err
@@ -96,6 +104,42 @@ func FindActiveStudents() ([]int, error) {
 	}
 
 	return studentIDs, nil
+}
+
+func IsDuplicate(studentID int) (bool, error) {
+	sheetID := env.EntryLogSID()
+	readRange := "A2:B"
+	values, err := database.GetValues(sheetID, readRange)
+	if err != nil {
+		return false, err
+	}
+
+	row := values[len(values)-1]
+	lastStudentID, err := strconv.Atoi(row[1].(string))
+	if err != nil {
+		return false, err
+	}
+
+	if lastStudentID != studentID {
+		return false, nil
+	}
+
+	jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+	enteredAt, err := time.ParseInLocation(TIMESTAMP_FORMAT, row[0].(string), jst)
+	if err != nil {
+		return false, err
+	}
+
+	now := time.Now()
+	duration := now.In(jst).Sub(enteredAt)
+
+	fmt.Println(duration)
+	if duration.Seconds() < 10 {
+		return true, nil
+	}
+
+	return false, nil
+
 }
 
 func DetermineEventType(activeStudents []int, studentID int) EventType {
