@@ -38,6 +38,10 @@ func Initialize() error {
 	return nil
 }
 
+// スプレッドシートから値を取得する
+//
+//   - sheetID: スプレッドシートのID
+//   - readRange: 値を取得する範囲
 func GetValues(sheetID string, readRange string) ([][]interface{}, error) {
 	resp, err := service.Spreadsheets.Values.Get(sheetID, readRange).Do()
 	if err != nil {
@@ -47,6 +51,10 @@ func GetValues(sheetID string, readRange string) ([][]interface{}, error) {
 	return resp.Values, nil
 }
 
+// スプレッドシートに行を追加する
+//
+//   - sheetID: スプレッドシートのID
+//   - values: 追加する行のデータ
 func AppendValues(sheetID string, writeRange string, values []interface{}) error {
 	rb := &sheets.ValueRange{
 		Values: [][]interface{}{values},

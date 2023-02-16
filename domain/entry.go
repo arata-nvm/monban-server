@@ -12,8 +12,13 @@ import (
 type EventType int
 
 const (
+	// 学生がログインした
 	EVENT_ENTRY EventType = iota
+
+	// 学生が最初にログインした（🔓の通知用）
 	EVENT_FIRST_ENTRY
+
+	// 学生がログアウトした
 	EVENT_EXIT
 )
 
@@ -46,6 +51,9 @@ func Entry(studentID int) error {
 	return AppendLog(now, studentID, studentName, event)
 }
 
+// 学籍番号に対応する学生の名前を取得する
+//
+//   - studentID: 学籍番号
 func FindStudentName(studentID int) (string, error) {
 	sheetID := env.StudentsSID()
 	readRange := "C2:D"
@@ -72,6 +80,7 @@ func FindStudentName(studentID int) (string, error) {
 	return name, nil
 }
 
+// 現在ログインしている学生の学籍番号を取得する
 func FindActiveStudents() ([]int, error) {
 	sheetID := env.EntryLogSID()
 	readRange := "A2:B"
@@ -106,10 +115,18 @@ func FindActiveStudents() ([]int, error) {
 	return studentIDs, nil
 }
 
+// 2つのtime.Time型のデータについて、日付が同じかを返す
+//
+//   - t1: 比較する日時
+//   - t2: 比較する日時
 func DateEquals(t1, t2 time.Time) bool {
 	return t1.Year() == t2.Year() && t1.Month() == t2.Month() && t1.Day() == t2.Day()
 }
 
+// 同じ学生が直前（10秒前まで）にログインしたかを返す。
+// カードリーダーの特性上、短時間で複数回ログインのリクエストが飛ぶことがあるためその確認に用いる。
+//
+// - studentID: 学生の学籍番号
 func IsDuplicated(studentID int) (bool, error) {
 	sheetID := env.EntryLogSID()
 	readRange := "A2:B"
@@ -145,6 +162,10 @@ func IsDuplicated(studentID int) (bool, error) {
 
 }
 
+// 学生がログインしたのかログアウトしたのかを返す
+//
+// - activeStudents: 現在ログインしている学生の学籍番号
+// - studentID: 学生の学籍番号
 func DetermineEventType(activeStudents []int, studentID int) EventType {
 	if len(activeStudents) == 0 {
 		return EVENT_FIRST_ENTRY
@@ -158,6 +179,11 @@ func DetermineEventType(activeStudents []int, studentID int) EventType {
 	}
 }
 
+// イベントの種別に応じた通知を送信する
+//
+//   - now: 現在時刻
+//   - studentName: 学生の名前
+//   - event: イベントの種別
 func PostMessage(now string, studentName string, event EventType) error {
 	switch event {
 	case EVENT_FIRST_ENTRY:
@@ -173,6 +199,12 @@ func PostMessage(now string, studentName string, event EventType) error {
 	return nil
 }
 
+// イベントの種別に応じたデータを記録に追加する
+//
+//   - now: 現在時刻
+//   - studentID: 学籍番号
+//   - studentName: 学生の名前
+//   - typ: イベントの種別
 func AppendLog(now string, studentID int, studentName string, typ EventType) error {
 	sheetID := env.EntryLogSID()
 	writeRange := "A2"
@@ -196,12 +228,17 @@ func AppendLog(now string, studentID int, studentName string, typ EventType) err
 
 const TIMESTAMP_FORMAT string = "2006/01/02 15:04:05"
 
+// 現在時刻を文字列で返す
 func timestamp() string {
 	jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 	now := time.Now().In(jst)
 	return now.Format(TIMESTAMP_FORMAT)
 }
 
+// 配列に特定の値が何個含まれているかを返す
+//
+//   - arr: 配列
+//   - value: カウントする値
 func count(arr []int, value int) int {
 	cnt := 0
 	for _, v := range arr {

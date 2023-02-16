@@ -8,6 +8,9 @@ import (
 	"github.com/arata-nvm/monban/env"
 )
 
+// Slackにメッセージを送信する
+//
+//   - text: メッセージ
 func PostToSlack(text string) error {
 	webhookUrl := env.SlackWebhook()
 
