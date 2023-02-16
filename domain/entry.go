@@ -18,11 +18,11 @@ const (
 )
 
 func Entry(studentID int) error {
-	isDuplicate, err := IsDuplicate(studentID)
+	isDuplicated, err := IsDuplicated(studentID)
 	if err != nil {
 		return err
 	}
-	if isDuplicate {
+	if isDuplicated {
 		return nil
 	}
 
@@ -92,7 +92,7 @@ func FindActiveStudents() ([]int, error) {
 			return nil, err
 		}
 
-		if enteredAt.Year() != now.Year() || enteredAt.Month() != now.Month() || enteredAt.Day() != now.Day() {
+		if !DateEquals(enteredAt, now) {
 			break
 		}
 
@@ -106,7 +106,11 @@ func FindActiveStudents() ([]int, error) {
 	return studentIDs, nil
 }
 
-func IsDuplicate(studentID int) (bool, error) {
+func DateEquals(t1, t2 time.Time) bool {
+	return t1.Year() == t2.Year() && t1.Month() == t2.Month() && t1.Day() == t2.Day()
+}
+
+func IsDuplicated(studentID int) (bool, error) {
 	sheetID := env.EntryLogSID()
 	readRange := "A2:B"
 	values, err := database.GetValues(sheetID, readRange)
@@ -133,7 +137,6 @@ func IsDuplicate(studentID int) (bool, error) {
 	now := time.Now()
 	duration := now.In(jst).Sub(enteredAt)
 
-	fmt.Println(duration)
 	if duration.Seconds() < 10 {
 		return true, nil
 	}

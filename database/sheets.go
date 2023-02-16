@@ -27,9 +27,9 @@ func Initialize() error {
 	if err != nil {
 		return err
 	}
-	client := config.Client(context.Background(), tok)
 
 	ctx := context.Background()
+	client := config.Client(context.Background(), tok)
 	service, err = sheets.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		return err
@@ -38,8 +38,8 @@ func Initialize() error {
 	return nil
 }
 
-func GetValues(sheetId string, readRange string) ([][]interface{}, error) {
-	resp, err := service.Spreadsheets.Values.Get(sheetId, readRange).Do()
+func GetValues(sheetID string, readRange string) ([][]interface{}, error) {
+	resp, err := service.Spreadsheets.Values.Get(sheetID, readRange).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -47,17 +47,15 @@ func GetValues(sheetId string, readRange string) ([][]interface{}, error) {
 	return resp.Values, nil
 }
 
-func AppendValues(sheetId string, writeRange string, values []interface{}) error {
-	valueInputOption := "USER_ENTERED"
-	insertDataOption := "INSERT_ROWS"
+func AppendValues(sheetID string, writeRange string, values []interface{}) error {
 	rb := &sheets.ValueRange{
 		Values: [][]interface{}{values},
 	}
 
 	_, err := service.Spreadsheets.Values.Append(
-		sheetId, writeRange, rb,
-	).ValueInputOption(valueInputOption).
-		InsertDataOption(insertDataOption).
+		sheetID, writeRange, rb,
+	).ValueInputOption("USER_ENTERED").
+		InsertDataOption("INSERT_ROWS").
 		Do()
 	if err != nil {
 		return err

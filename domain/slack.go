@@ -17,7 +17,10 @@ func PostToSlack(text string) error {
 		return err
 	}
 
-	http.Post(webhookUrl, "application/json", bytes.NewBuffer(payload))
+	_, err = http.Post(webhookUrl, "application/json", bytes.NewBuffer(payload))
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

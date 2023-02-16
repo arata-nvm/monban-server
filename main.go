@@ -14,6 +14,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	e := web.NewRouter()
-	e.Logger.Fatal(e.Start(":" + env.Port()))
+	r := web.NewRouter()
+	log.Fatal(r.Start(":" + env.Port()))
 }
