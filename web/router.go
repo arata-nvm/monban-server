@@ -36,7 +36,7 @@ func postEnter(ctx echo.Context) error {
 		return ctx.NoContent(http.StatusInternalServerError)
 	}
 
-	return ctx.NoContent(http.StatusNoContent)
+	return ctx.NoContent(http.StatusOK)
 }
 
 type enterRequest struct {
